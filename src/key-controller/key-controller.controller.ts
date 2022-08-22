@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, HttpCode, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, HttpCode, Post, Req, Res } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { KeyService } from '../key-service/key-service.service';
@@ -16,6 +16,21 @@ export class KeyController {
     async listKeys(@Res() res: Response, @Req() req: Request): Promise<Response> {
         try {
             const publicKey = await this.keyService.listKeys()
+            return res.status(200).json(publicKey)
+        } catch(e) {
+        console.log(e.stack)
+        throw new Error('Cannot list keys')
+        }
+    }
+
+    @Delete('/delete')
+    @ApiOperation({ summary: 'Delete all keys' })
+    @ApiResponse( { status: 200, description: 'Delete all keys' })
+    @HttpCode(200)
+    @Header('Content-type', 'application/json')
+    async deleteKeys(@Res() res: Response, @Req() req: Request): Promise<Response> {
+        try {
+            const publicKey = await this.keyService.deleteKeys()
             return res.status(200).json(publicKey)
         } catch(e) {
         console.log(e.stack)

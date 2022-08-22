@@ -22,9 +22,11 @@ export class KeyService {
     }
 
     private async generateKeys(): Promise<any> {
-        if(!await this.redisClient.hGetAll('keyPair')){
+        const { publicKey } = await this.redisClient.hGetAll('keyPair')
+        if(publicKey===undefined){
             const { publicKey, privateKey } = await this.cryptoService.generateKeys()
-            await this.redisClient.hSet('keyPair', { publicKey, privateKey }, { EX: 60 })
+            await this.redisClient.hSet('keyPair', { publicKey, privateKey })
+            await this.redisClient.expire('keyPair', 60)
             return { publicKey, privateKey }
         } else {
             const { publicKey, privateKey } = await this.redisClient.hGetAll('keyPair')
@@ -33,11 +35,14 @@ export class KeyService {
     }
 
     async listKeys(): Promise<any[]> {
-        const { promisify } = require('util');
-        const ttl = promisify(this.redisClient.ttl).bind(this.redisClient);
-        // const remaingTime = await ttl('keyPair');
-        // console.log(remaingTime)
-        return await this.redisClient.hGetAll('keyPair')
+        const ttl = await this.redisClient.ttl.bind(this.redisClient);
+        const remaingTime = await ttl('keyPair');
+        return { ...await this.redisClient.hGetAll('keyPair'), exp: remaingTime }
+    }
+
+    async deleteKeys() {
+        this.redisClient.del('keyPair')
+        return
     }
 
     async getPublicKey(): Promise<any> {
