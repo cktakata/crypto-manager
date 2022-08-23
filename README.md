@@ -28,9 +28,9 @@
 
 ## Install REDIS on Docker
 ````
-docker run -d --name redis -p 127.0.0.1:6379:6379 redis
+$ docker run -d --name redis -p 127.0.0.1:6379:6379 redis
 
-docker logs -f redis
+$ docker logs -f redis
 ````
 
 ## Installation
