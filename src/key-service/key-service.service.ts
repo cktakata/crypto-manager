@@ -22,6 +22,7 @@ export class KeyService {
     }
 
     private async checkKeys() {
+        const { env: { TTL: expiration } } = process
         const { publicKey: keyA } = await this.redisClient.hGetAll('keyPairA')
         const { publicKey: keyB } = await this.redisClient.hGetAll('keyPairB')
         const ttl = await this.redisClient.ttl.bind(this.redisClient);
@@ -36,22 +37,22 @@ export class KeyService {
         if((remaingTimeA<0 || remaingTimeA===undefined) && (remaingTimeB<0 || remaingTimeB===undefined)) {
             const { publicKey: publicA, privateKey: privateA } = await this.cryptoService.generateKeys()
             await this.redisClient.hSet('keyPairA', { publicKey:publicA, privateKey:privateA })
-            await this.redisClient.expire('keyPairA', 60)
+            await this.redisClient.expire('keyPairA', parseFloat(expiration))
             const { publicKey: publicB, privateKey: privateB } = await this.cryptoService.generateKeys()
             await this.redisClient.hSet('keyPairB', { publicKey:publicB, privateKey:privateB })
-            await this.redisClient.expire('keyPairB', 120)
+            await this.redisClient.expire('keyPairB', parseFloat(expiration)*2)
             return 2
         }
         if(remaingTimeA<0 || remaingTimeA===undefined) {
             const { publicKey: publicA, privateKey: privateA } = await this.cryptoService.generateKeys()
             await this.redisClient.hSet('keyPairA', { publicKey:publicA, privateKey:privateA })
-            await this.redisClient.expire('keyPairA', remaingTimeB+60)
+            await this.redisClient.expire('keyPairA', remaingTimeB+parseFloat(expiration))
             return 1
         }
         if(remaingTimeB<0 || remaingTimeB===undefined) {
             const { publicKey: publicB, privateKey: privateB } = await this.cryptoService.generateKeys()
             await this.redisClient.hSet('keyPairB', { publicKey:publicB, privateKey:privateB })
-            await this.redisClient.expire('keyPairB', remaingTimeA+60)
+            await this.redisClient.expire('keyPairB', remaingTimeA+parseFloat(expiration))
             return 1
         }
         return 0
