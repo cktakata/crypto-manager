@@ -8,6 +8,21 @@ import { KeyService } from '../key-service/key-service.service';
 export class KeyController {
     constructor(private readonly keyService: KeyService) {}
 
+    @Get('/generate')
+    @ApiOperation({ summary: 'Generate keys' })
+    @ApiResponse( { status: 201, description: 'Generate keys' })
+    @HttpCode(201)
+    @Header('Content-type', 'application/json')
+    async generateKeys(@Res() res: Response, @Req() req: Request): Promise<Response> {
+        try {
+            const qty = await this.keyService.generateKeys()
+            return res.status(201).json(qty)
+        } catch(e) {
+        console.log(e.stack)
+        throw new Error('Cannot generate keys')
+        }
+    }
+
     @Get('/list')
     @ApiOperation({ summary: 'Return all keys' })
     @ApiResponse( { status: 200, description: 'Return all keys' })
