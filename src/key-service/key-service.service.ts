@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CryptoService } from '../crypto-service/crypto-service.service';
 import * as redis from 'redis';
 
@@ -6,6 +6,7 @@ import * as redis from 'redis';
 export class KeyService {
 
     private redisClient: any
+    private readonly logger = new Logger(KeyService.name);
 
     constructor(private readonly cryptoService: CryptoService) {   
         const { env: { REDIS: redisURL } } = process
@@ -14,8 +15,8 @@ export class KeyService {
         })
 
         this.redisClient.on('error', (err) => {
-            console.log(err)
-            console.log('Error occurred while connection or accessing redis server')
+            this.logger.error(err)
+            this.logger.error('Error occurred while connection or accessing redis server');
         })
 
         this.redisClient.connect()
@@ -41,18 +42,21 @@ export class KeyService {
             const { publicKey: publicB, privateKey: privateB } = await this.cryptoService.generateKeys()
             await this.redisClient.hSet('keyPairB', { publicKey:publicB, privateKey:privateB })
             await this.redisClient.expire('keyPairB', parseFloat(expiration)*2)
+            this.logger.log('Generated 2 new keys');
             return 2
         }
         if(remaingTimeA<0 || remaingTimeA===undefined) {
             const { publicKey: publicA, privateKey: privateA } = await this.cryptoService.generateKeys()
             await this.redisClient.hSet('keyPairA', { publicKey:publicA, privateKey:privateA })
             await this.redisClient.expire('keyPairA', remaingTimeB+parseFloat(expiration))
+            this.logger.log('Generated key Pair A');
             return 1
         }
         if(remaingTimeB<0 || remaingTimeB===undefined) {
             const { publicKey: publicB, privateKey: privateB } = await this.cryptoService.generateKeys()
             await this.redisClient.hSet('keyPairB', { publicKey:publicB, privateKey:privateB })
             await this.redisClient.expire('keyPairB', remaingTimeA+parseFloat(expiration))
+            this.logger.log('Generated key Pair B');
             return 1
         }
         return 0
